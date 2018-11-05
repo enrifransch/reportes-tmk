@@ -1,32 +1,41 @@
-const XLSX = require('xlsx');
-const fs = require('fs');
-const f1 = 'KOOMKIN_JR_GRAL_26_10_18.xlsx'
+
+const f1 = 'KOOMKIN_JR_GRAL_26_10_18'
+const f2 = 'KOOMKIN_SEMIMASTER_26_10.xlsx'
 const uuidv4 = require('uuid/v4');
+const Excel = require('exceljs');
+const tp = require('tedious-promises');
+const dbConfig = require('./conf.json');
+const TYPES = require('tedious').TYPES;
+tp.setConnectionConfig(dbConfig); // global scope
 
-const buf = fs.readFileSync(f1);
-const wb = XLSX.read(buf, {type:'buffer'});
+tp.sql('select top 10 * from catusuario')
+.execute()
+.then(console.log)
+.catch(console.error)
 
-console.log(wb['E3605'])
+// addId(f1);
+// addId(f2);
 
-// Parse a file
-// const workSheetsFromFile = xlsx.parse(`./${f1}`);
-// workSheetsFromFile[0].data[0] = workSheetsFromFile[0].data[0].push('id')
-// const hoja1 = workSheetsFromFile[0];
-// hoja1.data[0].push('id')
+function addId(filename) {
+    const workbook = new Excel.Workbook();
+    workbook.xlsx.readFile(filename + '.xlsx').then(wb => {
+        const sheet = wb.getWorksheet('Hoja1') 
+        const count = sheet.rowCount;
+        const columns = sheet.columns;
+        const idCol = sheet.getColumn(13);
+        idCol.values = uuids(count);
+        idCol.header = 'uuid' 
+        wb.xlsx.writeFile(filename + '_uuid.xlsx').then(res => {
+            console.log(res)
+        })
+    })
+}
 
-// for (let i = 1; i < hoja1.data.length; i++) {
-//   hoja1.data[i].push(uuidv4())
-// }
-
-// workSheetsFromFile[0] = hoja1;
-
-
-// const buffer = xlsx.build([{name: "KOOMKIN_JR_GRAL_26_10_18(2)", data: workSheetsFromFile}]); 
-
-// fs.writeFile("KOOMKIN_JR_GRAL_26_10_18(2)", buffer, function(err) {
-//     if(err) {
-//         return console.log(err);
-//     }
-
-//     console.log("The file was saved!");
-// }); 
+function uuids(n) {
+    const arr = []
+    for (let i = 0; i < n; i++) {
+        arr[i] = uuidv4();
+    }
+    return arr;
+}
+    
